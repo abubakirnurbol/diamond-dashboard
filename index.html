@@ -944,10 +944,53 @@ function applyLive(d){
   if(act&&act.dataset.sub==='summary')wlBody.innerHTML=summaryPanel();
 }
 
+/* ---- Разделы из листов: Фасад · Электро · Механика ----
+   A Группа · B Наименование · C Ед. · D Объём · E Выполнено · F Было · G За день · H % · I Остаток */
+const SECTION_SHEETS=[['facade','Фасад'],['electro','Электро'],['mech','Механика']];
+
+async function fetchSection(sheetName){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
+  const res=await fetch(url,{cache:'no-store'});
+  if(!res.ok)throw new Error('Ответ сервера: '+res.status);
+  const txt=await res.text();
+  const a=txt.indexOf('('),b=txt.lastIndexOf(')');
+  if(a<0||b<0)throw new Error('Неожиданный формат ответа');
+  const json=JSON.parse(txt.substring(a+1,b));
+  const rows=(json.table&&json.table.rows)||[];
+  const groups=[];let cur=null;
+  rows.forEach(r=>{
+    const c=r.c||[];const g=i=>(c[i]&&c[i].v!=null)?c[i].v:null;
+    const nm=g(1);if(!nm||typeof nm!=='string'||nm.trim()==='Наименование')return;
+    const grpName=g(0)?String(g(0)).trim():null;
+    if(grpName&&(!cur||cur.name!==grpName)){cur={name:grpName,rows:[]};groups.push(cur);}
+    if(!cur){cur={name:null,rows:[]};groups.push(cur);}
+    const total=gvNum(g(3)),done=gvNum(g(4))||0,daily=gvNum(g(6));
+    const pct=total?done/total*100:0;
+    cur.rows.push([nm.trim(),gvRu(total),g(2)||'',(daily&&daily>0)?gvRu(daily):'—',
+      gvRu(done),+pct.toFixed(2),gvRu((total||0)-done),+(100-pct).toFixed(2)]);
+  });
+  return groups;
+}
+
+async function syncSections(){
+  for(const [id,sheet] of SECTION_SHEETS){
+    try{
+      const groups=await fetchSection(sheet);
+      if(!groups.length)continue;
+      const sec=WORKLOG.sections.find(s=>s.id===id);
+      if(sec){
+        sec.groups=groups;
+        const act=document.querySelector('#wlSub .subtab.on');
+        if(act&&act.dataset.sub===id)wlBody.innerHTML=sectionTable(sec);
+      }
+    }catch(e){console.warn(sheet+':',e.message);}
+  }
+}
+
 async function syncNow(){
   const st=document.getElementById('syncStatus'),ic=document.getElementById('refreshIc');
   if(st)st.textContent='Обновление…';if(ic)ic.classList.add('spin');
-  try{const d=await fetchProgress();applyLive(d);
+  try{const d=await fetchProgress();applyLive(d);await syncSections();
     if(st)st.textContent='Обновлено '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});}
   catch(e){console.error('Синхронизация:',e);if(st)st.textContent=(e&&e.message)?e.message:'Нет связи с таблицей';}
   finally{if(ic)ic.classList.remove('spin');}
