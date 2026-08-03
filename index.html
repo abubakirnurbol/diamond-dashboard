@@ -562,7 +562,7 @@
   <div class="navlabel">Инструменты</div>
   <div class="nav nav-ai" data-target="ai"><svg class="nav-ic" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 4.9L19 9.8l-4.1 2.9L16 18l-4-2.8L8 18l1.1-5.3L5 9.8l5.1-1.9L12 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>Diamond AI<span class="ai-tag">AI</span></div>
   <div class="side-action" id="btnPdf"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3h6l5 5v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 3v5h5M9.5 14h5M9.5 17h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Экспорт в PDF</div>
-  <div class="side-foot">Отчётная дата: <span class="num">30.06.2026</span><br>Подготовил: отдел качества</div>
+  <div class="side-foot">Отчётная дата: <span class="num" id="dtShort2">01.08.2026</span><br>Подготовил: отдел качества</div>
 </aside>
 <div class="side-overlay" id="sideOverlay"></div>
 
@@ -617,7 +617,7 @@
       <div class="cover">
         <div class="eyebrow">Сводный отчёт по строительству</div>
         <h1>ЖК «Diamond»</h1>
-        <div class="meta">Многоблочный жилой комплекс · 16 блоков · по состоянию на 30 июня 2026</div>
+        <div class="meta">Многоблочный жилой комплекс · 16 блоков · по состоянию на <span id="dtLong">1 августа 2026</span></div>
         <div class="kpis" id="kpis"></div>
       </div>
       <div class="grid2">
@@ -637,7 +637,7 @@
         <div class="csub" style="margin-bottom:10px">накопленный % · базовый ГПР, актуализированный ГПР и факт</div>
         <div style="position:relative;height:290px"><canvas id="sCurve"></canvas></div>
       </div>
-      <div class="card wt-card"><div class="ctitle" style="margin-bottom:4px">Выполнение по видам работ</div><div class="csub" style="margin-bottom:6px">% выполнения на 30.06.2026</div><div id="wtBars"></div></div>
+      <div class="card wt-card"><div class="ctitle" style="margin-bottom:4px">Выполнение по видам работ</div><div class="csub" style="margin-bottom:6px">% выполнения на <span id="dtShort1">01.08.2026</span></div><div id="wtBars"></div></div>
     </section>
     <section class="panel" id="issues">
       <div class="iss-group">
@@ -688,7 +688,7 @@
     <section class="panel" id="ai">
       <div class="ai-hero">
         <div class="ai-badge"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 4.9L19 9.8l-4.1 2.9L16 18l-4-2.8L8 18l1.1-5.3L5 9.8l5.1-1.9L12 3z" fill="currentColor"/></svg></div>
-        <div><h2>Diamond AI</h2><p>Аналитика проекта на базе ИИ · по данным на 30.06.2026</p></div>
+        <div><h2>Diamond AI</h2><p>Аналитика проекта на базе ИИ · по данным на <span id="dtShort3">01.08.2026</span></p></div>
       </div>
       <div class="ai-h">Ключевые выводы</div>
       <div id="aiInsights" class="ai-cards"></div>
@@ -769,11 +769,56 @@ const WORKTYPES=[
 const fmt=n=>n.toFixed(2).replace('.',',')+'%';
 const wtColor=v=>v>=90?COLORS.ok:v>=60?COLORS.accent:v>=30?COLORS.warn:COLORS.danger;
 document.getElementById('kGot').textContent=fmt(SUMMARY.done);
+/* ===== Актуальный план по ГПР и расхождение — считаются на текущую дату =====
+   PLAN_DAILY — накопленный план (%) по дням, лист «diamond plan rev01», столбец C. */
+/* ОТЧЁТНАЯ ДАТА — на неё считаются план по ГПР, расхождение и дни.
+   Меняется одной строкой: new Date(год, месяц-1, число) */
+const REPORT_DATE=new Date(2026,7,1); /* 01.08.2026 */
+const MON_RU=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function dd(d){return String(d).padStart(2,'0');}
+function reportLong(){return REPORT_DATE.getDate()+' '+MON_RU[REPORT_DATE.getMonth()]+' '+REPORT_DATE.getFullYear();}
+function reportShort(){return dd(REPORT_DATE.getDate())+'.'+dd(REPORT_DATE.getMonth()+1)+'.'+REPORT_DATE.getFullYear();}
+function applyReportDate(){
+  const L=document.getElementById('dtLong');if(L)L.textContent=reportLong();
+  ['dtShort1','dtShort2','dtShort3'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=reportShort();});
+}
+const PLAN_D0=new Date(2025,0,5); /* 05.01.2025 — первая точка */
+const PLAN_DAILY=[0.15,0.31,0.31,0.46,0.62,0.77,0.93,0.93,1.08,1.23,1.39,1.39,1.39,1.4,1.4,1.4,1.4,1.41,1.41,1.41,1.42,1.42,1.42,1.42,1.43,1.43,1.43,1.44,1.44,1.46,1.47,1.48,1.49,1.5,1.51,1.51,1.52,1.53,1.54,1.56,1.57,1.58,1.58,1.59,1.6,1.61,1.62,1.63,1.64,1.64,1.66,1.67,1.68,1.69,1.7,1.71,1.71,1.73,1.74,1.76,1.77,1.78,1.8,1.8,1.81,1.82,1.84,1.85,1.87,1.9,1.9,1.93,1.96,2.0,2.03,2.03,2.03,2.03,2.06,2.09,2.13,2.16,2.19,2.22,2.22,2.22,2.27,2.32,2.37,2.42,2.47,2.47,2.52,2.57,2.62,2.67,2.72,2.77,2.77,2.82,2.87,2.91,2.96,3.01,3.06,3.06,3.11,3.16,3.21,3.26,3.31,3.36,3.36,3.41,3.46,3.51,3.51,3.61,3.71,3.71,3.82,3.92,3.92,4.03,4.03,4.13,4.13,4.24,4.34,4.45,4.55,4.64,4.72,4.72,4.81,4.89,4.97,5.06,5.14,5.23,5.23,5.31,5.39,5.48,5.56,5.65,5.73,5.73,5.84,5.96,6.07,6.18,6.18,6.3,6.3,6.41,6.52,6.64,6.75,6.86,6.97,6.97,7.09,7.2,7.31,7.42,7.53,7.64,7.64,7.76,7.87,7.98,8.09,8.2,8.31,8.31,8.42,8.53,8.64,8.74,8.85,8.96,8.96,9.06,9.17,9.28,9.38,9.49,9.6,9.6,9.7,9.81,9.92,10.02,10.13,10.24,10.24,10.34,10.45,10.56,10.66,10.77,10.88,10.88,10.98,11.09,11.2,11.3,11.42,11.54,11.54,11.66,11.78,11.9,12.02,12.14,12.26,12.26,12.38,12.5,12.62,12.74,12.86,12.98,12.98,13.1,13.22,13.34,13.46,13.58,13.69,13.69,13.81,13.93,14.05,14.17,14.29,14.29,14.29,14.43,14.58,14.72,14.86,15.0,15.15,15.15,15.29,15.43,15.58,15.72,15.86,16.0,16.0,16.15,16.29,16.43,16.57,16.72,16.86,16.86,17.0,17.14,17.29,17.43,17.57,17.72,17.72,17.86,18.0,18.14,18.28,18.43,18.57,18.57,18.71,18.85,18.99,19.14,19.28,19.42,19.42,19.56,19.7,19.85,19.99,20.13,20.27,20.27,20.41,20.56,20.7,20.84,20.98,20.98,20.98,21.12,21.27,21.41,21.55,21.69,21.83,21.83,21.97,22.11,22.25,22.39,22.52,22.66,22.66,22.8,22.94,23.08,23.22,23.36,23.49,23.49,23.63,23.77,23.91,24.05,24.19,24.33,24.33,24.47,24.6,24.74,24.88,25.02,25.16,25.16,25.26,25.35,25.45,25.55,25.65,25.74,25.74,25.84,25.94,26.03,26.13,26.23,26.32,26.32,26.42,26.42,26.52,26.62,26.71,26.81,26.81,26.91,27.0,27.1,27.2,27.3,27.39,27.39,27.49,27.59,27.68,27.68,27.68,27.68,27.68,27.76,27.84,27.84,27.92,28.01,28.09,28.09,28.17,28.25,28.33,28.41,28.48,28.55,28.55,28.62,28.69,28.76,28.83,28.9,28.97,28.97,29.04,29.11,29.18,29.25,29.32,29.39,29.39,29.47,29.55,29.64,29.72,29.8,29.89,29.89,29.97,30.05,30.14,30.22,30.3,30.39,30.39,30.47,30.56,30.64,30.73,30.81,30.9,30.9,30.99,31.07,31.16,31.24,31.33,31.41,31.41,31.5,31.59,31.68,31.77,31.86,31.94,31.94,32.03,32.12,32.21,32.3,32.39,32.47,32.47,32.56,32.65,32.74,32.83,32.83,32.83,32.83,32.92,33.0,33.09,33.18,33.27,33.36,33.36,33.45,33.53,33.63,33.72,33.81,33.9,33.9,34.0,34.09,34.18,34.27,34.37,34.46,34.46,34.55,34.64,34.74,34.84,34.95,35.05,35.05,35.16,35.26,35.37,35.47,35.58,35.68,35.68,35.79,35.89,36.0,36.1,36.1,36.26,36.26,36.41,36.56,36.72,36.72,36.87,36.87,36.87,37.02,37.18,37.33,37.48,37.64,37.79,37.79,37.94,38.1,38.25,38.4,38.55,38.71,38.71,38.86,39.01,39.01,39.17,39.32,39.47,39.47,39.65,39.82,40.0,40.17,40.35,40.52,40.52,40.7,40.87,41.04,41.22,41.39,41.57,41.57,41.75,41.92,42.1,42.28,42.46,42.64,42.64,42.81,42.99,43.17,43.35,43.52,43.7,43.7,43.88,44.06,44.2,44.35,44.49,44.64,44.64,44.64,44.8,44.96,45.11,45.27,45.43,45.43,45.59,45.75,45.93,46.11,46.29,46.47,46.47,46.65,46.83,47.01,47.19,47.38,47.56,47.56,47.74,47.92,48.1,48.28,48.46,48.65,48.65,48.85,49.04,49.24,49.43,49.62,49.82,49.82,50.01,50.21,50.4,50.6,50.79,50.98,50.98,51.18,51.37,51.57,51.76,51.96,52.15,52.15,52.34,52.54,52.73,52.93,53.12,53.31,53.31,53.31,53.55,53.78,54.01,54.24,54.47,54.47,54.7,54.93,55.16,55.4,55.63,55.86,55.87,56.1,56.33,56.57,56.8,57.03,57.26,57.26,57.49,57.72,57.95,58.18,58.42,58.65,58.65,58.88,59.11,59.34,59.57,59.8,60.03,60.03,60.27,60.5,60.73,60.96,61.19,61.42,61.42,61.66,61.89,62.12,62.35,62.58,62.81,62.81,63.05,63.28,63.51,63.74,63.97,64.2,64.2,64.43,64.67,64.9,65.13,65.36,65.59,65.59,65.81,66.03,66.24,66.46,66.68,66.89,66.89,67.11,67.33,67.54,67.76,67.98,68.19,68.19,68.41,68.63,68.84,69.06,69.28,69.49,69.49,69.71,69.93,70.14,70.36,70.58,70.79,70.79,71.01,71.14,71.26,71.39,71.51,71.63,71.63,71.74,71.85,71.96,72.08,72.19,72.3,72.3,72.41,72.53,72.53,72.53,72.64,72.75,72.75,72.86,72.97,73.08,73.19,73.3,73.41,73.41,73.52,73.63,73.74,73.85,73.85,73.85,73.85,73.85,73.94,74.03,74.03,74.12,74.22,74.22,74.31,74.4,74.5,74.59,74.68,74.77,74.77,74.86,74.95,75.04,75.13,75.22,75.31,75.31,75.4,75.49,75.58,75.67,75.76,75.85,75.85,75.94,76.03,76.12,76.21,76.3,76.39,76.39,76.48,76.57,76.66,76.75,76.84,76.93,76.93,77.02,77.11,77.2,77.29,77.38,77.46,77.46,77.55,77.64,77.73,77.82,77.91,78.0,78.0,78.14,78.29,78.43,78.57,78.72,78.86,78.86,78.86,78.86,79.01,79.15,79.3,79.44,79.44,79.59,79.75,79.9,80.06,80.22,80.37,80.37,80.37,80.39,80.4,80.56,80.71,80.87,80.87,81.03,81.18,81.34,81.52,81.7,81.89,81.89,82.07,82.25,82.43,82.61,82.79,82.98,82.98,83.16,83.34,83.52,83.7,83.89,84.07,84.07,84.25,84.43,84.61,84.8,84.98,85.16,85.16,85.34,85.52,85.71,85.89,86.07,86.07,86.07,86.25,86.43,86.61,86.8,86.8,86.98,86.98,87.16,87.34,87.52,87.7,87.88,88.07,88.07,88.07,88.23,88.39,88.55,88.72,88.88,88.88,89.04,89.21,89.37,89.53,89.7,89.86,89.86,90.02,90.18,90.33,90.49,90.64,90.8,90.8,90.95,91.11,91.26,91.42,91.57,91.73,91.73,91.88,92.04,92.19,92.35,92.5,92.66,92.66,92.81,92.97,93.12,93.28,93.43,93.59,93.59,93.74,93.9,94.05,94.21,94.36,94.52,94.52,94.67,94.67,94.83,94.99,95.14,95.3,95.3,95.45,95.61,95.76,95.92,96.07,96.23,96.23,96.38,96.54,96.69,96.85,97.0,97.16,97.16,97.31,97.46,97.62,97.77,97.93,98.08,98.08,98.15,98.22,98.28,98.35,98.41,98.48,98.48,98.54,98.61,98.68,98.74,98.81,98.87,98.87,98.94,99.0,99.07,99.13,99.2,99.26,99.26,99.33,99.39,99.46,99.52,99.59,99.65,99.65,99.72,99.78,99.79,99.8,99.81,99.82,99.82,99.82,99.83,99.84,99.85,99.86,99.86,99.86,99.87,99.88,99.89,99.89,99.9,99.91,99.91,99.92,99.93,99.93,99.94,99.95,99.96,99.96,99.97,99.97,99.98,100];
+function planIdxToday(){
+  const t=new Date(REPORT_DATE.getTime());t.setHours(0,0,0,0);
+  const i=Math.round((t-PLAN_D0)/86400000);
+  return Math.max(0,Math.min(PLAN_DAILY.length-1,i));
+}
+/* план на сегодня, % */
+function planToday(){return PLAN_DAILY[planIdxToday()];}
+/* расхождение в днях: когда план достиг текущего факта, минус сегодня.
+   отрицательное = отставание от ГПР */
+function deviationDays(factPct){
+  if(factPct==null||isNaN(factPct))return null;
+  let reach=-1;
+  for(let i=0;i<PLAN_DAILY.length;i++){if(PLAN_DAILY[i]>=factPct){reach=i;break;}}
+  if(reach<0)return null;
+  return reach-planIdxToday();
+}
+function dayWord(n){const a=Math.abs(n)%100,b=a%10;
+  if(a>10&&a<20)return 'дней';
+  if(b===1)return 'день';
+  if(b>=2&&b<=4)return 'дня';
+  return 'дней';}
+function devText(n){return n==null?'—':((n>0?'+':'')+n+' '+dayWord(n));}
+/* пересчитать план и расхождение в резюме */
+function applyPlanStats(){
+  const f=Number(SUMMARY.done);
+  WORKLOG.summary.fact=f;
+  WORKLOG.summary.plan=planToday();
+  WORKLOG.summary.deviation=devText(deviationDays(f));
+}
+
 const WEEKLY={delta:0.84}; /* прирост за неделю, % — обновляется из листа «Сводка» */
 /* Дней до завершения проекта (календарные), считается от текущей даты */
 const PROJECT_END=new Date(2027,8,30); /* 30.09.2027 */
 function daysLeft(){
-  const t=new Date();t.setHours(0,0,0,0);
+  const t=new Date(REPORT_DATE.getTime());t.setHours(0,0,0,0);
   return Math.max(0,Math.round((PROJECT_END-t)/86400000));
 }
 function renderCover(){
@@ -788,6 +833,8 @@ function renderCover(){
   const wt=document.getElementById('wtBars');wt.innerHTML='';
   WORKTYPES.forEach(w=>{const c=wtColor(w.done);wt.insertAdjacentHTML('beforeend',`<div class="wt-row"><span class="nm">${w.name}</span><span class="bar" style="height:10px"><i style="width:${w.done}%;background:${c}"></i></span><span class="pc" style="color:${c}">${fmt(w.done)}</span></div>`);});
 }
+applyReportDate();
+applyPlanStats();
 renderCover();
 if(window.Chart){
   const donut=(id,a,b,colA)=>new Chart(document.getElementById(id),{type:'doughnut',data:{datasets:[{data:[a,b],backgroundColor:[colA,'#DCE3EF'],borderWidth:0,hoverOffset:0}]},options:{cutout:'70%',animation:{duration:700},plugins:{legend:{display:false},tooltip:{enabled:false}}}});
@@ -956,6 +1003,7 @@ function applyLive(d){
     const cC=document.getElementById('dWorkCenter'),cD=document.getElementById('dWorkDone'),cR=document.getElementById('dWorkRemain');
     if(cC)cC.textContent=fmt(done);if(cD)cD.textContent=fmt(done);if(cR)cR.textContent=fmt(remain);
     if(typeof updateSCurveFact==='function')updateSCurveFact();
+    if(typeof applyPlanStats==='function')applyPlanStats();
   }
   /* столбцы «Выполнение по видам работ» — из тех же строк листа */
   WT_MATCH.forEach((m,i)=>{const row=d.work.find(w=>w.name.includes(m[1]));if(row&&row.donePct!=null&&WORKTYPES[i])WORKTYPES[i].done=row.donePct;});
@@ -1039,7 +1087,9 @@ async function syncIssues(){
     document.getElementById('riskList').innerHTML=RISKS.map(issueCard).join('');
     document.getElementById('cUrgent').textContent=URGENT.length;
     document.getElementById('cRisk').textContent=RISKS.length;
-    document.getElementById('kIss').textContent=URGENT.length+RISKS.length;
+    const _t=URGENT.length+RISKS.length;
+    document.getElementById('kIss').textContent=_t;
+    const _b=document.getElementById('issBadge');if(_b)_b.textContent=_t;
   }catch(e){console.warn('Вопросы:',e.message);}
 }
 
